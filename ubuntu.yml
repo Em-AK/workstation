@@ -84,6 +84,7 @@
       - 2.1.5
       - 2.4.1
   tasks:  
+    # APT packages
     - name: Add extra apt keys
       become: yes
       apt_key: 
@@ -107,6 +108,7 @@
       become: yes
       with_items: "{{ packages }}"
 
+    # Fish shell plugins
     - name: Install fisherman (fish plugins manager)
       get_url: 
         url: https://git.io/fisher
@@ -188,7 +190,4 @@
         args:
           chdir: /tmp/hub
       when: hub_execution|failed
-
-# dotfiles( i3, vim, tmux )
-# android dev env => cordova
 
