@@ -181,7 +181,7 @@
 
     # Install hub
     - name: Check if hub is installed
-      shell: hub
+      shell: hub version
       ignore_errors: True
       register: hub_execution
     - block:
