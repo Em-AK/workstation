@@ -1,0 +1,194 @@
+---
+- hosts: all
+  vars:
+    apt_keys:
+      - https://syncthing.net/release-key.txt
+      - https://download.docker.com/linux/ubuntu/gpg
+    apt_repos:
+      - ppa:fish-shell/release-2
+      - ppa:tmate.io/archive
+      - "deb https://apt.syncthing.net/ syncthing stable"
+      - "deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable"
+    fish_config_lines:
+      - "set PATH $HOME/.rbenv/bin $PATH"
+      - "set PATH $HOME/.rbenv/shims $PATH"
+      - "rbenv rehash >/dev/null ^&1"
+    default_gems:
+      - bundler
+      - pry
+    fish_plugins:
+      - await
+      - fnm
+      - get_file_age
+      - git_util
+      - last_job_id
+      - menu
+      - rbenv
+      - vibrant
+    node_versions:
+      - lts
+      - latest
+    packages:
+      - autoconf
+      - ack-grep
+      - apt-transport-https
+      - bison
+      - build-essential
+      - ca-certificates
+      - chromium-browser
+      - cowsay
+      - curl
+      - docker-ce
+      - exfat-fuse
+      - figlet
+      - firefox
+      - fish
+      - gimp
+      - git
+      - golang
+      - gparted
+      - htop
+      - i3
+      - inkscape
+      - libffi-dev
+      - libgdbm3
+      - libgdbm-dev
+      - libncurses5-dev
+      - libreadline6-dev
+      - libsqlite3-dev
+      - libssl-dev
+      - libyaml-dev
+      - network-manager-openvpn-gnome
+      - pcmanfm
+      - postgresql
+      - redshift
+      - sakura
+      - software-properties-common
+      - sqlite3
+      - syncthing
+      - tmate
+      - tmux
+      - transmission-gtk
+      - tree
+      - viewnior
+      - vim
+      - vlc
+      - wget
+      - zlib1g-dev
+    rbenv_plugins:
+      ruby-build:
+        repo: https://github.com/rbenv/ruby-build.git
+      rbenv-default-gems:
+        repo: https://github.com/rbenv/rbenv-default-gems.git
+    ruby_versions:
+      - 2.1.5
+      - 2.4.1
+  tasks:  
+    - name: Add extra apt keys
+      become: yes
+      apt_key: 
+        url: "{{ item }}"
+        state: present
+      with_items: "{{ apt_keys }}"
+    - name: Add extra apt repos
+      become: yes
+      apt_repository:
+        repo: "{{ item }}"
+        state: present
+      with_items: "{{ apt_repos }}"
+    - name: Update apt cache
+      become: yes
+      apt: update_cache=yes
+    - name: Update all packages to the latest version
+      apt: upgrade=dist
+      become: yes
+    - name: Install libraries with apt
+      apt: name={{ item }} state=latest
+      become: yes
+      with_items: "{{ packages }}"
+
+    - name: Install fisherman (fish plugins manager)
+      get_url: 
+        url: https://git.io/fisher
+        dest: ~/.config/fish/functions/fisher.fish
+    - name: Install fish plugins
+      shell: "fisher install {{item}}"
+      args:
+        chdir: ~/
+        executable: /usr/bin/fish
+      with_items: "{{ fish_plugins }}"
+    - name: Update fish plugins
+      shell: fisher update
+      args:
+        chdir: ~/
+        executable: /usr/bin/fish
+
+    # Install nodes
+    - name: List available node versions
+      shell: fnm ls
+      args:
+        executable: /usr/bin/fish
+      register: available_nodes
+    - name: Install node versions
+      shell: "fnm use {{ item }}"
+      args:
+        executable: /usr/bin/fish
+      with_items: "{{ node_versions }}"
+
+    # Install rubies
+    - name: Clone rbenv from git
+      git:
+        repo: https://github.com/rbenv/rbenv.git
+        dest: ~/.rbenv
+    - name: Install rbenv plugins from git
+      git:
+        repo: "{{ item.value.repo }}"
+        dest: "~/.rbenv/plugins/{{ item.key }}"
+      with_dict: "{{ rbenv_plugins }}"
+    - name: Compile bash extensions for rbenv
+      shell: "src/configure && make -C src"
+      args:
+        chdir: ~/.rbenv
+    - name: Add rbenv in path for fish
+      # source: https://github.com/rbenv/rbenv/issues/195#issuecomment-6168636
+      lineinfile:
+        dest: ~/.config/fish/config.fish
+        line: "{{ item }}"
+      with_items: "{{ fish_config_lines }}"
+    - name: Set default gems
+      lineinfile:
+        dest: ~/.rbenv/default-gems
+        line: "{{ item }}"
+        create: yes
+      with_items: "{{ default_gems }}"
+    - name: List ruby versions
+      shell: rbenv versions
+      args:
+        executable: /usr/bin/fish
+      register: installed_rubies
+    - name: Install missing ruby versions
+      shell: "rbenv install {{ item }}"
+      args:
+        executable: /usr/bin/fish
+      with_items: "{{ ruby_versions }}"
+      when: installed_rubies.stdout.find(item) == -1
+
+    # Install hub
+    - name: Check if hub is installed
+      shell: hub
+      ignore_errors: True
+      register: hub_execution
+    - block:
+      - name: Clone hub repo
+        git:
+          repo: https://github.com/github/hub.git
+          dest: /tmp/hub
+      - name: Compile and install hub
+        shell: "script/build -o ~/bin/hub"
+        args:
+          chdir: /tmp/hub
+      when: hub_execution|failed
+
+# dotfiles( i3, vim, tmux )
+# android dev env => cordova
+
