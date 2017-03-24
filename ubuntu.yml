@@ -5,6 +5,7 @@
       - https://syncthing.net/release-key.txt
       - https://download.docker.com/linux/ubuntu/gpg
     apt_repos:
+      - ppa:ansible/ansible
       - ppa:fish-shell/release-2
       - ppa:tmate.io/archive
       - "deb https://apt.syncthing.net/ syncthing stable"
@@ -13,10 +14,10 @@
       - "set PATH $HOME/.rbenv/bin $PATH"
       - "set PATH $HOME/.rbenv/shims $PATH"
       - "rbenv rehash >/dev/null ^&1"
-    default_gems:
+    default_gems: # gems installed with each new version of ruby
       - bundler
       - pry
-    fish_plugins:
+    fish_plugins: # find new fish plugins at http://fisherman.github.io/
       - await
       - fnm
       - get_file_age
@@ -25,13 +26,15 @@
       - menu
       - rbenv
       - vibrant
-    node_versions:
+    node_versions: # adapt to your needs
       - lts
       - latest
-    packages:
-      - autoconf
+     #- 4.8.1
+    packages: # adapt to your needs
       - ack-grep
+      - ansible
       - apt-transport-https
+      - autoconf
       - bison
       - build-essential
       - ca-certificates
@@ -75,14 +78,15 @@
       - vlc
       - wget
       - zlib1g-dev
-    rbenv_plugins:
+    rbenv_plugins: # find new rbenv plugins at https://github.com/rbenv/rbenv/wiki/Plugins
       ruby-build:
         repo: https://github.com/rbenv/ruby-build.git
       rbenv-default-gems:
         repo: https://github.com/rbenv/rbenv-default-gems.git
-    ruby_versions:
+    ruby_versions: # adapt to your needs
       - 2.1.5
       - 2.4.1
+
   tasks:  
     # APT packages
     - name: Add extra apt keys
