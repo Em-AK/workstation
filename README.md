@@ -26,7 +26,7 @@ Edit `/etc/ansible/hosts` to have this line uncommented/added
 
     localhost ansible_connection=local
 
-Edit `etc/ansible/ansible.cfg` in the `[privilege_escalation]` section uncomment/add this line
+Edit `/etc/ansible/ansible.cfg` in the `[privilege_escalation]` section uncomment/add this line
 
     become_ask_pass=True
 
